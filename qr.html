@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>扫码访问甘肃文化网页</title>
+  <style>
+    :root {
+      --ochre: #8f3f22;
+      --malachite: #2e8b6f;
+      --gold: #d6a84f;
+      --ink: #241713;
+      --paper: #f6efe2;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100svh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 1.2rem;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 50% -12%, rgba(255,255,255,.96), transparent 34rem),
+        radial-gradient(circle at 24% 18%, rgba(214,168,79,.22), transparent 24rem),
+        linear-gradient(160deg, #fbf7ef, #ead7bc 58%, #d9b58d);
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif;
+    }
+
+    .wrap {
+      width: min(100%, 980px);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 390px);
+      gap: clamp(1.4rem, 5vw, 4rem);
+      align-items: center;
+    }
+
+    h1 {
+      margin: 0;
+      color: #5f2416;
+      font-size: clamp(2.2rem, 6vw, 5.4rem);
+      line-height: .98;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 1rem 0 0;
+      color: rgba(36,23,19,.75);
+      line-height: 1.85;
+      font-size: 1.04rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      gap: .5rem;
+      align-items: center;
+      color: #12604e;
+      font-weight: 800;
+      margin-bottom: 1rem;
+    }
+
+    .badge::before {
+      content: "";
+      width: 2.4rem;
+      height: 2px;
+      background: linear-gradient(90deg, var(--gold), var(--malachite));
+    }
+
+    .qr-card {
+      padding: 1.1rem;
+      border-radius: 8px;
+      background: rgba(255,255,255,.70);
+      border: 1px solid rgba(143,63,34,.18);
+      box-shadow: 0 24px 80px rgba(53,32,19,.22);
+    }
+
+    #qr {
+      width: 100%;
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      background: #fff;
+      border-radius: 8px;
+      padding: .75rem;
+    }
+
+    #qr svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .target {
+      margin-top: .9rem;
+      padding: .8rem;
+      border-radius: 8px;
+      background: rgba(46,139,111,.08);
+      overflow-wrap: anywhere;
+      font-size: .95rem;
+      line-height: 1.55;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .75rem;
+      margin-top: 1.4rem;
+    }
+
+    a.button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: .75rem 1rem;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 800;
+      color: #fff8e8;
+      background: linear-gradient(135deg, var(--ochre), #b76431 52%, var(--gold));
+      box-shadow: 0 10px 24px rgba(53,32,19,.14);
+    }
+
+    a.button.secondary {
+      color: var(--ink);
+      background: rgba(255,255,255,.62);
+      border: 1px solid rgba(143,63,34,.18);
+    }
+
+    @media (max-width: 780px) {
+      .wrap {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section>
+      <div class="badge">手机扫码入口</div>
+      <h1>甘肃文化网页二维码</h1>
+      <p>用任意手机扫码后，会跳转到“甘肃传统文化与经典建筑”网页。电脑需要先启动本地服务，手机和电脑需要连接同一个局域网。</p>
+      <div class="actions">
+        <a class="button" id="openTarget" href="index.html">打开网页</a>
+        <a class="button secondary" href="index.html">返回展览页</a>
+      </div>
+    </section>
+
+    <aside class="qr-card" aria-label="二维码">
+      <div id="qr"></div>
+      <div class="target" id="targetText"></div>
+    </aside>
+  </main>
+
+  <script>
+    const DEFAULT_TARGET = "http://localhost:4173/";
+    const params = new URLSearchParams(location.search);
+    const isLocalHost = ["localhost", "127.0.0.1", ""].includes(location.hostname);
+    const target = params.get("data") || (
+      location.protocol.startsWith("http") && location.host
+        ? (isLocalHost ? DEFAULT_TARGET : new URL("./", location.href).href)
+        : DEFAULT_TARGET
+    );
+
+    document.getElementById("targetText").textContent = target;
+    document.getElementById("openTarget").href = target;
+
+    function generateQRCodeSvg(text) {
+      const qr = createQrCode(text);
+      const border = 4;
+      const n = qr.size;
+      let path = "";
+      for (let y = 0; y < n; y++) {
+        for (let x = 0; x < n; x++) {
+          if (qr.get(x, y)) path += `M${x + border},${y + border}h1v1h-1z`;
+        }
+      }
+      const size = n + border * 2;
+      return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="访问网页二维码">
+        <rect width="100%" height="100%" fill="#fff"/>
+        <path d="${path}" fill="#241713"/>
+      </svg>`;
+    }
+
+    function createQrCode(text) {
+      const version = 3;
+      const size = 21 + (version - 1) * 4;
+      const dataCodewords = 44;
+      const eccCodewords = 26;
+      const modules = Array.from({ length: size }, () => Array(size).fill(false));
+      const reserved = Array.from({ length: size }, () => Array(size).fill(false));
+
+      function set(x, y, value, reserve = true) {
+        if (x < 0 || y < 0 || x >= size || y >= size) return;
+        modules[y][x] = !!value;
+        if (reserve) reserved[y][x] = true;
+      }
+
+      function finder(x, y) {
+        for (let dy = -1; dy <= 7; dy++) {
+          for (let dx = -1; dx <= 7; dx++) {
+            const xx = x + dx;
+            const yy = y + dy;
+            const on = dx >= 0 && dx <= 6 && dy >= 0 && dy <= 6 &&
+              (dx === 0 || dx === 6 || dy === 0 || dy === 6 || (dx >= 2 && dx <= 4 && dy >= 2 && dy <= 4));
+            set(xx, yy, on);
+          }
+        }
+      }
+
+      finder(0, 0);
+      finder(size - 7, 0);
+      finder(0, size - 7);
+
+      for (let i = 8; i < size - 8; i++) {
+        set(i, 6, i % 2 === 0);
+        set(6, i, i % 2 === 0);
+      }
+
+      for (let dy = -2; dy <= 2; dy++) {
+        for (let dx = -2; dx <= 2; dx++) {
+          const dist = Math.max(Math.abs(dx), Math.abs(dy));
+          set(22 + dx, 22 + dy, dist !== 1);
+        }
+      }
+
+      set(8, 17, true);
+      reserveFormatAreas();
+
+      const data = makeDataCodewords(text, dataCodewords);
+      const ecc = reedSolomon(data, eccCodewords);
+      const bits = [];
+      for (const cw of data.concat(ecc)) {
+        for (let i = 7; i >= 0; i--) bits.push(((cw >>> i) & 1) !== 0);
+      }
+
+      let bitIndex = 0;
+      let upward = true;
+      for (let right = size - 1; right >= 1; right -= 2) {
+        if (right === 6) right--;
+        for (let vert = 0; vert < size; vert++) {
+          const y = upward ? size - 1 - vert : vert;
+          for (let j = 0; j < 2; j++) {
+            const x = right - j;
+            if (!reserved[y][x]) {
+              modules[y][x] = bitIndex < bits.length ? bits[bitIndex++] : false;
+            }
+          }
+        }
+        upward = !upward;
+      }
+
+      let bestMask = 0;
+      let bestPenalty = Infinity;
+      let bestModules = null;
+      for (let mask = 0; mask < 8; mask++) {
+        const candidate = modules.map(row => row.slice());
+        for (let y = 0; y < size; y++) {
+          for (let x = 0; x < size; x++) {
+            if (!reserved[y][x] && maskBit(mask, x, y)) candidate[y][x] = !candidate[y][x];
+          }
+        }
+        drawFormat(candidate, mask);
+        const penalty = getPenalty(candidate);
+        if (penalty < bestPenalty) {
+          bestPenalty = penalty;
+          bestMask = mask;
+          bestModules = candidate;
+        }
+      }
+
+      drawFormat(bestModules, bestMask);
+      return {
+        size,
+        get: (x, y) => bestModules[y][x]
+      };
+
+      function reserveFormatAreas() {
+        for (let i = 0; i < 9; i++) {
+          if (i !== 6) {
+            reserved[8][i] = true;
+            reserved[i][8] = true;
+          }
+        }
+        for (let i = 0; i < 8; i++) {
+          reserved[8][size - 1 - i] = true;
+          reserved[size - 1 - i][8] = true;
+        }
+        reserved[8][8] = true;
+      }
+
+      function drawFormat(targetModules, mask) {
+        const bits = formatBits(mask);
+        for (let i = 0; i <= 5; i++) targetModules[8][i] = ((bits >>> i) & 1) !== 0;
+        targetModules[8][7] = ((bits >>> 6) & 1) !== 0;
+        targetModules[8][8] = ((bits >>> 7) & 1) !== 0;
+        targetModules[7][8] = ((bits >>> 8) & 1) !== 0;
+        for (let i = 9; i < 15; i++) targetModules[14 - i][8] = ((bits >>> i) & 1) !== 0;
+        for (let i = 0; i < 8; i++) targetModules[size - 1 - i][8] = ((bits >>> i) & 1) !== 0;
+        for (let i = 8; i < 15; i++) targetModules[8][size - 15 + i] = ((bits >>> i) & 1) !== 0;
+        targetModules[size - 8][8] = true;
+      }
+    }
+
+    function makeDataCodewords(text, dataCodewords) {
+      const bytes = Array.from(new TextEncoder().encode(text));
+      if (bytes.length > 42) throw new Error("URL too long for fixed QR version 3-M");
+      const bits = [];
+      appendBits(bits, 0x4, 4);
+      appendBits(bits, bytes.length, 8);
+      for (const b of bytes) appendBits(bits, b, 8);
+      appendBits(bits, 0, Math.min(4, dataCodewords * 8 - bits.length));
+      while (bits.length % 8) bits.push(false);
+      const result = [];
+      for (let i = 0; i < bits.length; i += 8) {
+        let value = 0;
+        for (let j = 0; j < 8; j++) value = (value << 1) | (bits[i + j] ? 1 : 0);
+        result.push(value);
+      }
+      for (let pad = 0; result.length < dataCodewords; pad++) {
+        result.push(pad % 2 === 0 ? 0xec : 0x11);
+      }
+      return result;
+    }
+
+    function appendBits(arr, value, length) {
+      for (let i = length - 1; i >= 0; i--) arr.push(((value >>> i) & 1) !== 0);
+    }
+
+    function reedSolomon(data, degree) {
+      const gen = rsGenerator(degree);
+      const rem = Array(degree).fill(0);
+      for (const b of data) {
+        const factor = b ^ rem.shift();
+        rem.push(0);
+        for (let i = 0; i < degree; i++) rem[i] ^= gfMul(gen[i], factor);
+      }
+      return rem;
+    }
+
+    function rsGenerator(degree) {
+      let poly = [1];
+      for (let i = 0; i < degree; i++) {
+        const next = Array(poly.length + 1).fill(0);
+        for (let j = 0; j < poly.length; j++) {
+          next[j] ^= gfMul(poly[j], 1);
+          next[j + 1] ^= gfMul(poly[j], gfPow(2, i));
+        }
+        poly = next;
+      }
+      return poly.slice(1);
+    }
+
+    function gfPow(x, power) {
+      let result = 1;
+      for (let i = 0; i < power; i++) result = gfMul(result, x);
+      return result;
+    }
+
+    function gfMul(x, y) {
+      let z = 0;
+      for (let i = 7; i >= 0; i--) {
+        z = (z << 1) ^ ((z >>> 7) * 0x11d);
+        z ^= ((y >>> i) & 1) * x;
+      }
+      return z & 0xff;
+    }
+
+    function maskBit(mask, x, y) {
+      switch (mask) {
+        case 0: return (x + y) % 2 === 0;
+        case 1: return y % 2 === 0;
+        case 2: return x % 3 === 0;
+        case 3: return (x + y) % 3 === 0;
+        case 4: return (Math.floor(y / 2) + Math.floor(x / 3)) % 2 === 0;
+        case 5: return ((x * y) % 2) + ((x * y) % 3) === 0;
+        case 6: return (((x * y) % 2) + ((x * y) % 3)) % 2 === 0;
+        case 7: return (((x + y) % 2) + ((x * y) % 3)) % 2 === 0;
+      }
+    }
+
+    function formatBits(mask) {
+      const eccLevelM = 0;
+      let data = (eccLevelM << 3) | mask;
+      let bits = data << 10;
+      const poly = 0x537;
+      for (let i = 14; i >= 10; i--) {
+        if (((bits >>> i) & 1) !== 0) bits ^= poly << (i - 10);
+      }
+      return (((data << 10) | bits) ^ 0x5412) & 0x7fff;
+    }
+
+    function getPenalty(m) {
+      const size = m.length;
+      let penalty = 0;
+      for (let y = 0; y < size; y++) {
+        let runColor = m[y][0];
+        let run = 1;
+        for (let x = 1; x < size; x++) {
+          if (m[y][x] === runColor) run++;
+          else {
+            if (run >= 5) penalty += run - 2;
+            runColor = m[y][x];
+            run = 1;
+          }
+        }
+        if (run >= 5) penalty += run - 2;
+      }
+      for (let x = 0; x < size; x++) {
+        let runColor = m[0][x];
+        let run = 1;
+        for (let y = 1; y < size; y++) {
+          if (m[y][x] === runColor) run++;
+          else {
+            if (run >= 5) penalty += run - 2;
+            runColor = m[y][x];
+            run = 1;
+          }
+        }
+        if (run >= 5) penalty += run - 2;
+      }
+      for (let y = 0; y < size - 1; y++) {
+        for (let x = 0; x < size - 1; x++) {
+          const c = m[y][x];
+          if (c === m[y][x + 1] && c === m[y + 1][x] && c === m[y + 1][x + 1]) penalty += 3;
+        }
+      }
+      const pattern = [true, false, true, true, true, false, true, false, false, false, false];
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x <= size - 11; x++) {
+          if (pattern.every((v, i) => m[y][x + i] === v)) penalty += 40;
+        }
+      }
+      for (let x = 0; x < size; x++) {
+        for (let y = 0; y <= size - 11; y++) {
+          if (pattern.every((v, i) => m[y + i][x] === v)) penalty += 40;
+        }
+      }
+      let dark = 0;
+      for (const row of m) for (const cell of row) if (cell) dark++;
+      penalty += Math.floor(Math.abs(dark * 20 - size * size * 10) / (size * size)) * 10;
+      return penalty;
+    }
+
+    try {
+      document.getElementById("qr").innerHTML = generateQRCodeSvg(target);
+    } catch (error) {
+      const fallback = `https://api.qrserver.com/v1/create-qr-code/?size=900x900&margin=18&data=${encodeURIComponent(target)}`;
+      document.getElementById("qr").innerHTML = `<img src="${fallback}" alt="访问网页二维码" style="width:100%;height:100%;object-fit:contain">`;
+    }
+  </script>
+</body>
+</html>
