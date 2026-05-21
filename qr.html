@@ -170,20 +170,8 @@
     document.getElementById("openTarget").href = target;
 
     function generateQRCodeSvg(text) {
-      const qr = createQrCode(text);
-      const border = 4;
-      const n = qr.size;
-      let path = "";
-      for (let y = 0; y < n; y++) {
-        for (let x = 0; x < n; x++) {
-          if (qr.get(x, y)) path += `M${x + border},${y + border}h1v1h-1z`;
-        }
-      }
-      const size = n + border * 2;
-      return `<svg viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="访问网页二维码">
-        <rect width="100%" height="100%" fill="#fff"/>
-        <path d="${path}" fill="#241713"/>
-      </svg>`;
+      const src = `https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&margin=40&data=${encodeURIComponent(text)}`;
+      return `<img src="${src}" alt="访问网页二维码" style="width:100%;height:100%;object-fit:contain">`;
     }
 
     function createQrCode(text) {
